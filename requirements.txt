@@ -1,2 +1,4 @@
 Flask
-playwright
+selenium
+webdriver_manager
+chromedriver-autoinstaller
