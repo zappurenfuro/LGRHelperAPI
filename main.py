@@ -6,25 +6,23 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-import chromedriver_autoinstaller
 import re
 import time
 
 app = Flask(__name__)
 
 def scrape_latest_post(url):
-    chromedriver_autoinstaller.install()
-    
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    
-    # Add these lines to specify the path to the Chrome executable
-    chrome_options.binary_location = "/usr/bin/google-chrome"
-    
-    driver = webdriver.Chrome(options=chrome_options)
+    options = Options()
+    options.add_argument('--no-sandbox')
+    options.add_argument('--headless')
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-extensions')
+    options.add_argument('--disable-gpu')
+    options.binary_location = "/opt/render/project/.render/chrome/opt/google/chrome"
+
+    driver = webdriver.Chrome(options=options)
+    driver.set_page_load_timeout(90)
 
     try:
         driver.get(url)
@@ -33,7 +31,6 @@ def scrape_latest_post(url):
         wait = WebDriverWait(driver, 20)
         try:
             post = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-ad-preview="message"]')))
-            
             try:
                 see_more = post.find_element(By.XPATH, ".//div[contains(text(), 'Lihat selengkapnya')]")
                 driver.execute_script("arguments[0].click();", see_more)
