@@ -19,6 +19,7 @@ def scrape_latest_post(url):
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     
+    # Automatically fetch and use the compatible ChromeDriver version
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
 
@@ -30,11 +31,10 @@ def scrape_latest_post(url):
         try:
             post = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-ad-preview="message"]')))
             
-            # Try to click "See More" if it exists
             try:
                 see_more = post.find_element(By.XPATH, ".//div[contains(text(), 'Lihat selengkapnya')]")
                 driver.execute_script("arguments[0].click();", see_more)
-                time.sleep(2)  # Wait for content to expand
+                time.sleep(2)
             except NoSuchElementException:
                 print("No 'Lihat selengkapnya' button found. The post might already be fully expanded.")
 
@@ -47,7 +47,6 @@ def scrape_latest_post(url):
         post_url = None
         page_source = driver.page_source
 
-        # Look for the post ID in the page source
         post_id_match = re.search(r'"post_id":"(\d+)"', page_source)
         if post_id_match:
             post_id = post_id_match.group(1)
