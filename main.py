@@ -1,5 +1,6 @@
 from flask import Flask, jsonify
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -66,17 +67,21 @@ def scrape_latest_post(url):
 
         wait = WebDriverWait(driver, 30)
         try:
-            post = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-ad-preview="message"]')))
-            print("Found post element")
+            # Ensure we are getting the latest post by selecting the first post element
+            posts = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div[data-ad-preview="message"]')))
+            print("Found post elements")
+
+            latest_post = posts[0]  # Assuming the first post element is the latest
+            print("Selected the latest post element")
 
             try:
-                see_more = post.find_element(By.XPATH, ".//div[contains(text(), 'See more')]")
+                see_more = latest_post.find_element(By.XPATH, ".//div[contains(text(), 'See more')]")
                 driver.execute_script("arguments[0].click();", see_more)
                 time.sleep(2)
             except NoSuchElementException:
                 print("No 'See more' button found. The post might already be fully expanded.")
             
-            content = post.text
+            content = latest_post.text
             print(f"Found post content: {content[:100]}...")
         except TimeoutException:
             return {"error": "Timeout waiting for post content"}
