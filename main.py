@@ -12,6 +12,7 @@ import time
 app = Flask(__name__)
 
 def scrape_latest_post(url):
+    print("Starting scrape_latest_post function")
     options = Options()
     options.add_argument('--no-sandbox')
     options.add_argument('--headless')
@@ -19,21 +20,32 @@ def scrape_latest_post(url):
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-extensions')
     options.add_argument('--disable-gpu')
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
     options.binary_location = "/opt/render/project/.render/chrome/opt/google/chrome"
-
-    driver = webdriver.Chrome(options=options)
-    driver.set_page_load_timeout(90)
+    print("Chrome options set up")
 
     try:
+        driver = webdriver.Chrome(options=options)
+        print("WebDriver initialized successfully")
+    except Exception as e:
+        print(f"Error initializing WebDriver: {str(e)}")
+        return None
+
+    driver.set_page_load_timeout(120)
+
+    try:
+        print(f"Attempting to load URL: {url}")
         driver.get(url)
         print(f"Loaded URL: {driver.current_url}")
 
-        wait = WebDriverWait(driver, 20)
+        wait = WebDriverWait(driver, 30)
         try:
             post = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-ad-preview="message"]')))
+            print("Found post element")
             try:
                 see_more = post.find_element(By.XPATH, ".//div[contains(text(), 'See more')]")
                 driver.execute_script("arguments[0].click();", see_more)
+                print("Clicked 'See more' button")
                 time.sleep(2)
             except NoSuchElementException:
                 print("No 'See more' button found. The post might already be fully expanded.")
@@ -65,17 +77,28 @@ def scrape_latest_post(url):
             print("Failed to find both content and URL")
             return None
 
+    except Exception as e:
+        print(f"Error during scraping: {str(e)}")
+        return None
     finally:
         driver.quit()
+        print("Driver quit")
 
 @app.route('/latest_post', methods=['GET'])
 def get_latest_post():
     url = 'https://www.facebook.com/LGRIDofficial'
-    result = scrape_latest_post(url)
-    if result:
-        return jsonify(result)
-    else:
-        return jsonify({"error": "Failed to scrape the latest post"}), 404
+    try:
+        result = scrape_latest_post(url)
+        if result:
+            return jsonify(result)
+        else:
+            return jsonify({"error": "Failed to scrape the latest post", "details": "No content or URL found"}), 404
+    except Exception as e:
+        return jsonify({"error": "Exception occurred", "details": str(e)}), 500
+
+@app.route('/', methods=['GET'])
+def home():
+    return "Facebook Scraper API is running. Use /latest_post to get the latest post."
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
