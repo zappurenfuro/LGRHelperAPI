@@ -36,7 +36,7 @@ def scrape_latest_post(url):
                 driver.execute_script("arguments[0].click();", see_more)
                 time.sleep(2)
             except NoSuchElementException:
-                print("No 'Lihat selengkapnya' button found. The post might already be fully expanded.")
+                print("No 'See more' button found. The post might already be fully expanded.")
 
             content = post.text
             print(f"Found post content: {content[:100]}...")
