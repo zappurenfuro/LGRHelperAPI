@@ -53,6 +53,14 @@ def scrape_latest_post(url):
         try:
             post = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-ad-preview="message"]')))
             print("Found post element")
+
+            try:
+                see_more = post.find_element(By.XPATH, ".//div[contains(text(), 'See more')]")
+                driver.execute_script("arguments[0].click();", see_more)
+                time.sleep(2)
+            except NoSuchElementException:
+                print("No 'Lihat selengkapnya' button found. The post might already be fully expanded.")
+            
             content = post.text
             print(f"Found post content: {content[:100]}...")
         except TimeoutException:
