@@ -8,6 +8,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import re
 import time
+import os
+import json
 
 app = Flask(__name__)
 
@@ -20,6 +22,13 @@ def scrape_latest_post(url):
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-extensions')
     options.add_argument('--disable-gpu')
+    options.add_argument('--disable-notifications')
+    options.add_argument('--disable-infobars')
+    options.add_argument('--start-maximized')
+    options.add_argument('--disable-popup-blocking')
+    options.add_argument('--disable-blink-features=AutomationControlled')
+    options.add_experimental_option('excludeSwitches', ['enable-automation'])
+    options.add_experimental_option('useAutomationExtension', False)
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
     options.binary_location = "/opt/render/project/.render/chrome/opt/google/chrome"
     print("Chrome options set up")
@@ -32,15 +41,22 @@ def scrape_latest_post(url):
 
     driver.set_page_load_timeout(120)
 
+    # Read cookies from environment variable
+    cookies_json = os.environ.get('FACEBOOK_COOKIES')
+    if not cookies_json:
+        return {"error": "Facebook cookies not found in environment variables"}
+    
     try:
-        driver = webdriver.Chrome(options=options)
-        print("WebDriver initialized successfully")
-    except Exception as e:
-        return {"error": f"WebDriver initialization failed: {str(e)}"}
-
-    driver.set_page_load_timeout(120)
+        cookies = json.loads(cookies_json)
+    except json.JSONDecodeError:
+        return {"error": "Failed to parse Facebook cookies from environment variable"}
 
     try:
+        # First, navigate to facebook.com to set the cookies
+        driver.get("https://www.facebook.com")
+        for cookie in cookies:
+            driver.add_cookie(cookie)
+        
         print(f"Attempting to load URL: {url}")
         driver.get(url)
         print(f"Loaded URL: {driver.current_url}")
@@ -59,7 +75,7 @@ def scrape_latest_post(url):
                 driver.execute_script("arguments[0].click();", see_more)
                 time.sleep(2)
             except NoSuchElementException:
-                print("No 'Lihat selengkapnya' button found. The post might already be fully expanded.")
+                print("No 'See more' button found. The post might already be fully expanded.")
             
             content = post.text
             print(f"Found post content: {content[:100]}...")
