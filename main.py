@@ -30,9 +30,8 @@ def initialize_webdriver():
     options.add_experimental_option('useAutomationExtension', False)
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
     options.binary_location = "/opt/render/project/.render/chrome/opt/google/chrome"
-    
     driver = webdriver.Chrome(options=options)
-    driver.set_page_load_timeout(120)
+    driver.set_page_load_timeout(60)
     return driver
 
 def load_cookies(driver):
@@ -48,7 +47,7 @@ def load_cookies(driver):
 
 def scrape_post_url(driver, page_url):
     driver.get(page_url)
-    wait = WebDriverWait(driver, 30)
+    wait = WebDriverWait(driver, 20)
     try:
         post = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-ad-preview="message"]')))
         print("Found post element")
@@ -70,7 +69,7 @@ def scrape_post_url(driver, page_url):
 
 def scrape_post_content(driver, post_url):
     driver.get(post_url)
-    wait = WebDriverWait(driver, 30)
+    wait = WebDriverWait(driver, 20)
     try:
         post = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-ad-preview="message"]')))
         print("Found post content element")
@@ -78,7 +77,6 @@ def scrape_post_content(driver, post_url):
         try:
             see_more = post.find_element(By.XPATH, ".//div[contains(text(), 'See more')]")
             driver.execute_script("arguments[0].click();", see_more)
-            time.sleep(2)
         except NoSuchElementException:
             print("No 'See more' button found. The post might already be fully expanded.")
         
